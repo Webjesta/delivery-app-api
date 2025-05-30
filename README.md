@@ -1,61 +1,203 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+````markdown
+# Delivery App API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-powered RESTful API backend for a delivery application. Supports:
 
-## About Laravel
+- **User Authentication** (register/login/logout) via Laravel Sanctum  
+- **Roles**: Seller & Customer  
+- **Seller Features**  
+  - CRUD **Products**  
+  - View & update **Orders** placed on their products  
+- **Customer Features**  
+  - **Browse** available products  
+  - **Place** new orders  
+  - **View** own orders  
+- **Notifications** (in-app & email)  
+  - Sellers notified of new orders  
+  - Customers notified of order status changes  
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Table of Contents
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. [Prerequisites](#prerequisites)  
+2. [Installation & Setup](#installation--setup)  
+3. [Environment Configuration](#environment-configuration)  
+4. [Database Migrations & Seeding](#database-migrations--seeding)  
+5. [Running the App](#running-the-app)  
+6. [API Endpoints](#api-endpoints)  
+7. [Notifications](#notifications)  
+8. [Testing with Postman](#testing-with-postman)  
+9. [Contributing](#contributing)  
+10. [License](#license)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Prerequisites
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP ≥ 8.1  
+- Composer  
+- MySQL  
+- Node.js & NPM (for future front-end, optional)  
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Installation & Setup
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+# 1. Clone the repo
+git clone https://github.com/<your-username>/delivery-app-api.git
+cd delivery-app-api
 
-### Premium Partners
+# 2. Install PHP dependencies
+composer install
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 3. Copy & configure .env
+cp .env.example .env
+# edit .env → set DB_* and SANCTUM stateful domains if needed
+
+# 4. Generate app key
+php artisan key:generate
+
+# 5. (Optional) Install NPM deps
+npm install
+
+# 6. Build front-end assets (if you have any)
+npm run dev
+````
+
+---
+
+## Environment Configuration
+
+Open `.env` and set at minimum:
+
+```ini
+APP_NAME="Delivery App API"
+APP_ENV=local
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=delivery_app
+DB_USERNAME=your_mysql_user
+DB_PASSWORD=your_mysql_password
+
+SANCTUM_STATEFUL_DOMAINS=127.0.0.1:8000
+```
+
+---
+
+## Database Migrations & Seeding
+
+```bash
+# Run all migrations
+php artisan migrate
+
+# (Optional) Seed sample data
+php artisan db:seed
+```
+
+---
+
+## Running the App
+
+```bash
+# Start the built-in dev server
+php artisan serve
+# The API is now available at http://127.0.0.1:8000/api
+```
+
+---
+
+## API Endpoints
+
+All routes are prefixed with `/api`. Use **Bearer** token for protected routes.
+
+### Authentication
+
+| Method | URI         | Body Params                                                                                                        | Description                      |
+| ------ | ----------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| POST   | `/register` | `name`, `email`, `password`,<br>`password_confirmation`, `role` (`seller`/`customer`),<br>`shop_name` or `address` | Register as seller or customer   |
+| POST   | `/login`    | `email`, `password`                                                                                                | Login and receive `access_token` |
+| POST   | `/logout`   | *none* (Bearer token header)                                                                                       | Revoke current token             |
+
+### Seller Routes *(role = seller)*
+
+| Method | URI                     | Body Params                                               | Description                         |
+| ------ | ----------------------- | --------------------------------------------------------- | ----------------------------------- |
+| GET    | `/seller/products`      | *none*                                                    | List all your products              |
+| POST   | `/seller/products`      | `name`, `description`, `price`, `stock`                   | Create a new product                |
+| GET    | `/seller/products/{id}` | *none*                                                    | Get a single product by ID          |
+| PUT    | `/seller/products/{id}` | `name`, `description`, `price`, `stock`                   | Update your product by ID           |
+| DELETE | `/seller/products/{id}` | *none*                                                    | Delete your product by ID           |
+| GET    | `/seller/orders`        | *none*                                                    | List orders placed on your products |
+| PATCH  | `/seller/orders/{id}`   | `status` (`pending`,`processing`,`completed`,`cancelled`) | Update order status                 |
+
+### Customer Routes *(role = customer)*
+
+| Method | URI                     | Body Params              | Description                |
+| ------ | ----------------------- | ------------------------ | -------------------------- |
+| GET    | `/customer/browse`      | *none*                   | List all in-stock products |
+| POST   | `/customer/orders`      | `product_id`, `quantity` | Place a new order          |
+| GET    | `/customer/orders`      | *none*                   | List your orders           |
+| GET    | `/customer/orders/{id}` | *none*                   | Get a single order by ID   |
+
+### Notifications
+
+| Method | URI                        | Description                      |
+| ------ | -------------------------- | -------------------------------- |
+| GET    | `/notifications`           | Get current user’s notifications |
+| PATCH  | `/notifications/{id}/read` | Mark a notification as read      |
+
+---
+
+## Notifications
+
+* **Stored** in the `notifications` table.
+* **Fired** when:
+
+  * Customer places an order → Seller receives `NewOrderNotification`.
+  * Seller updates status → Customer receives `OrderStatusChangedNotification`.
+* **Access** via `/api/notifications` (with token).
+
+---
+
+## Testing with Postman
+
+1. **Register** seller & customer.
+2. **Login** both and store their tokens.
+3. **Test**:
+
+   * Seller: CRUD products, view/update orders.
+   * Customer: browse products, place orders, view orders.
+   * Notifications endpoint.
+4. **Headers** for protected routes:
+
+   ```
+   Authorization: Bearer <token>
+   Accept: application/json
+   ```
+
+---
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Feel free to open issues or PRs! Suggested workflow:
 
-## Code of Conduct
+1. Fork & clone.
+2. Create a feature branch (`git checkout -b feat/awesome`).
+3. Commit your changes (`git commit -m "Add awesome feature"`).
+4. Push (`git push origin feat/awesome`) & open a PR.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-source, released under the [MIT License](LICENSE).
+
+```
+
+Feel free to adjust any sections (e.g. database seeders, mail setup) as your project evolves!
+```
